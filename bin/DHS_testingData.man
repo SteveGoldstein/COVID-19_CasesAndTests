@@ -1,0 +1,1 @@
+cat DHS_data.csv |perl -F, -nale 'next if /Census/; $F[0]=~s/\s.*$//; print join ",", @F[0,2,4..6]' > DHS_testingData.csv
