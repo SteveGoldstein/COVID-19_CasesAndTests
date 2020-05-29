@@ -46,3 +46,11 @@ dhsData <-  dhsData %>%
   select(-c("NEGATIVE")) %>% 
   arrange(Date) 
 
+weeklySmoothed <- 
+  dhsData %>% 
+  mutate(newCases = Cases - lag(Cases, n=7,default = NA)) %>% 
+  mutate(newTests = Tests - lag(Tests,n = 7, default = NA)) %>% 
+  mutate(posFraction = newCases/newTests)
+
+write.csv(weeklySmoothed,"weeklySmoothFractionPositive.csv",quote = F, row.names = F)
+
