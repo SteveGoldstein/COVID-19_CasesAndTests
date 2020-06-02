@@ -1,5 +1,7 @@
 library(dplyr)
 library(lubridate)
+library(lattice)
+library(latticeExtra)
 
 defaultArgs <- list (
   plotFile = NULL,
@@ -69,11 +71,82 @@ censusData <-
 weeklySmoothed <-  weeklySmoothed %>% 
   inner_join(censusData,by="County")
 
-xyplot(posFraction ~ Date,weeklySmoothed, groups=County, type="l")
-xyplot(posFraction ~ Date|ntile(Population,n=4),weeklySmoothed, groups=County, type="l")
+#xyplot(posFraction ~ Date,weeklySmoothed, groups=County, type="l")
+#xyplot(posFraction ~ Date|ntile(Population,n=4),weeklySmoothed, groups=County, type="l")
 
-xyplot(posFraction ~ Date|ntile(Population,n=4),
-       weeklySmoothed %>% filter(Date > "2020-05-01"), groups=County, type="l")
+#xyplot(posFraction ~ Date|ntile(Population,n=4),
+#       weeklySmoothed %>% filter(Date > "2020-05-01"), groups=County, type="l")
 
-write.csv(weeklySmoothed,"weeklySmoothFractionPositive.csv",quote = F, row.names = F)
+
+dailyFraction <- weeklySmoothed %>% 
+  mutate(dailyPos = Cases - lag(Cases,n=1)) %>% 
+  mutate(dailyTests = Tests - lag(Tests,n=1)) %>% 
+  mutate(dailyFractionPos = dailyPos/dailyTests)
+
+
+x1 <- xyplot(posFraction ~ Date,
+       dailyFraction %>% 
+         filter(Date > "2020-05-01") %>% 
+         filter(County == "WI"),  
+       type=c("l","p")
+)
+
+x2 <- xyplot(dailyFractionPos ~ Date,
+             
+             dailyFraction %>% 
+               filter(Date > "2020-05-01") %>% 
+               filter(County == "WI"), 
+             #type=c("l","p"),
+             type="h", lwd = 10,
+             col = "red"
+)
+
+b1 <- barchart(dailyFractionPos ~ Date,
+         
+         dailyFraction %>% 
+           filter(Date > "2020-05-01") %>% 
+           filter(County == "WI"), 
+       horizontal = F,
+       col = "red",
+       y.same = TRUE,
+       x.same = TRUE
+       )
+
+b2 <- barchart(posFraction ~ Date,
+               
+               dailyFraction %>% 
+                 filter(Date > "2020-05-01") %>% 
+                 filter(County == "WI"), 
+               horizontal = F,
+               col = "blue",
+               fill  = F,
+               y.same = TRUE,
+               x.same = TRUE
+)
+
+x1+x2
+x2+b1
+b1+x2
+b1 + b2
+
+#write.csv(weeklySmoothed,"weeklySmoothFractionPositive.csv",quote = F, row.names = F)
+
+
+d <- dailyFraction %>%
+  filter(Date > "2020-03-30") %>%
+  filter(County == "WI")
+
+ggplot(d, aes(x=Date, y=posFraction)) + geom_point() +geom_line() 
+ggplot(d, aes(x=Date, y=dailyFractionPos)) + geom_point() +geom_line() + ggplot(d, aes(x=Date, y=posFraction)) + geom_point() +geom_line() 
+
+g1 <- ggplot(d, aes(x=Date, y=dailyFractionPos),col = "lightgrey") + geom_bar(stat="identity") 
+ggplot(d, aes(x=Date, y=dailyFractionPos)) + geom_bar(stat="identity") + geom_point(data=d, aes(x=Date, y=posFraction)) + geom_line(data=d,aes(Date,posFraction) )
+
+
+g2+ annotate("text", x=range(d$Date)[1], y=range(d$posFraction)[2],label = "-- rolling 7 day window", col="red",hjust = 0, vjust = 1, size = 4)
+g2+ annotate("text", x= min(d$Date)+1, y = max(d$posFraction), hjust=0,label = "-- rolling 7 day window", col="red", size = 4)
+
+g2+ annotate("text", x= min(d$Date)+1, y = max(d$dailyFractionPos), hjust=0,
+             label = "-- rolling 7 day window", col="red", size = 4)
+
 
