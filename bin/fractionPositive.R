@@ -6,7 +6,7 @@ library(ggplot2)
 
 defaultArgs <- list (
   plotFile = NULL,
-  outFile =  'positiveTestRate.csv',
+  outFile =  NULL,
   lag = 7,
   inFile = NULL,       ## by-pass download
   
@@ -72,6 +72,7 @@ censusData <-
 weeklySmoothed <-  weeklySmoothed %>% 
   inner_join(censusData,by="County")
 
+## some first attempts:  (remember ntile(Population))
 #xyplot(posFraction ~ Date,weeklySmoothed, groups=County, type="l")
 #xyplot(posFraction ~ Date|ntile(Population,n=4),weeklySmoothed, groups=County, type="l")
 
@@ -84,6 +85,15 @@ dailyFraction <- weeklySmoothed %>%
   mutate(dailyTests = Tests - lag(Tests,n=1)) %>% 
   mutate(dailyFractionPos = dailyPos/dailyTests)
 
+if (!is.null(args$outFile)) {
+    write.csv(dailyFraction,args$outFile, quote = FALSE, row.names = FALSE)
+}
+
+if (!is.null(args$plotFile)) {
+    pdf(args$plotFile)
+} else {
+    pdf("/dev/null")
+}
 
 x1 <- xyplot(posFraction ~ Date,
        dailyFraction %>% 
@@ -125,36 +135,51 @@ b2 <- barchart(posFraction ~ Date,
                x.same = TRUE
 )
 
-x1+x2
-x2+b1
-b1+x2
-b1 + b2
-
-#write.csv(weeklySmoothed,"weeklySmoothFractionPositive.csv",quote = F, row.names = F)
+#x1+x2
+#x2+b1
+#b1+x2
+#b1 + b2
 
 
 d <- dailyFraction %>%
   filter(Date > "2020-03-30") %>%
   filter(County == "WI")
 
-ggplot(d, aes(x=Date, y=posFraction)) + geom_point() +geom_line() 
-ggplot(d, aes(x=Date, y=dailyFractionPos)) + geom_point() +geom_line() 
+#ggplot(d, aes(x=Date, y=posFraction)) + geom_point() +geom_line() 
+#ggplot(d, aes(x=Date, y=dailyFractionPos)) + geom_point() +geom_line() 
 
-g0 <- ggplot(data=d, aes(x=Date, y=posFraction)) +
-    geom_line(data=d,aes(Date,posFraction))
-g1 <- ggplot(d, aes(x=Date, y=dailyFractionPos),col = "lightgrey") +
-    geom_bar(stat="identity") 
+#g0 <- ggplot(data=d, aes(x=Date, y=posFraction)) +
+#    geom_line(data=d,aes(Date,posFraction))
+
+### barchart with daily positive rate
+g1 <- ggplot(d, aes(x=Date, y=dailyFractionPos)) +
+    geom_bar(stat="identity", fill = "lightgrey") 
+## layer with weekly smoothing
 g2 <- g1 +
-    geom_point(data=d, aes(x=Date, y=posFraction)) +
-    geom_line(data=d,aes(Date,posFraction) )
-g0
-g1
-g2
+    geom_point(data=d, aes(x=Date, y=posFraction), col = "red") +
+    geom_line(data=d,aes(Date,posFraction),col = "red" )
+#g0
+#g1
+#g2
 
-g2+ annotate("text", x=range(d$Date)[1], y=range(d$posFraction)[2],label = "-- rolling 7 day window", col="red",hjust = 0, vjust = 1, size = 4)
-g2+ annotate("text", x= min(d$Date)+1, y = max(d$posFraction), hjust=0,label = "-- rolling 7 day window", col="red", size = 4)
+#g2+ annotate("text", x=range(d$Date)[1], y=range(d$posFraction)[2],label = "-- rolling 7 day window", col="red",hjust = 0, vjust = 1, size = 4)
+#g2+ annotate("text", x= min(d$Date)+1, y = max(d$posFraction), hjust=0,label = "-- rolling 7 day window", col="red", size = 4)
 
-g2+ annotate("text", x= min(d$Date)+1, y = max(d$dailyFractionPos), hjust=0,
-             label = "-- rolling 7 day window", col="red", size = 4)
+#g2+ annotate("text", x= min(d$Date)+1, y = max(d$dailyFractionPos), hjust=0,
+#             label = "-- rolling 7 day window", col="red", size = 4)
+
+### add annotations
+countyName <- "WI"
+lastDate <- max(d$Date)
+cases <- (d %>%  filter(Date == lastDate & County == countyName))$Cases
+
+g3 <- g2+ 
+  annotate("text", x= min(d$Date)+1, y = max(d$dailyFractionPos), hjust=0,
+                   label = "-- rolling 7 day window", col="red", size = 4) +
+  ylab("Fraction positive") +
+  ggtitle(paste0(countyName," (", cases," cases on ", lastDate,")"))
+g3
+dev.off()
+q()
 
 
