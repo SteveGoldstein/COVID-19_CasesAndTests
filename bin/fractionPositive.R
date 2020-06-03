@@ -2,10 +2,11 @@ library(dplyr)
 library(lubridate)
 library(lattice)
 library(latticeExtra)
+library(ggplot2)
 
 defaultArgs <- list (
   plotFile = NULL,
-  outFile =  'positiveRates.csv',
+  outFile =  'positiveTestRate.csv',
   lag = 7,
   inFile = NULL,       ## by-pass download
   
@@ -15,7 +16,7 @@ defaultArgs <- list (
 args <- R.utils::commandArgs(trailingOnly = TRUE,
                              asValues = TRUE ,
                              defaults = defaultArgs)
-# source("lib/estimate.R")
+
 lag <- as.integer(args$lag)
 dhsURL <- 'https://opendata.arcgis.com/datasets/b913e9591eae4912b33dc5b4e88646c5_10.csv'
 censusURL <- "https://www2.census.gov/programs-surveys/popest/datasets/2010-2019/counties/totals/co-est2019-alldata.csv"
@@ -137,11 +138,18 @@ d <- dailyFraction %>%
   filter(County == "WI")
 
 ggplot(d, aes(x=Date, y=posFraction)) + geom_point() +geom_line() 
-ggplot(d, aes(x=Date, y=dailyFractionPos)) + geom_point() +geom_line() + ggplot(d, aes(x=Date, y=posFraction)) + geom_point() +geom_line() 
+ggplot(d, aes(x=Date, y=dailyFractionPos)) + geom_point() +geom_line() 
 
-g1 <- ggplot(d, aes(x=Date, y=dailyFractionPos),col = "lightgrey") + geom_bar(stat="identity") 
-ggplot(d, aes(x=Date, y=dailyFractionPos)) + geom_bar(stat="identity") + geom_point(data=d, aes(x=Date, y=posFraction)) + geom_line(data=d,aes(Date,posFraction) )
-
+g0 <- ggplot(data=d, aes(x=Date, y=posFraction)) +
+    geom_line(data=d,aes(Date,posFraction))
+g1 <- ggplot(d, aes(x=Date, y=dailyFractionPos),col = "lightgrey") +
+    geom_bar(stat="identity") 
+g2 <- g1 +
+    geom_point(data=d, aes(x=Date, y=posFraction)) +
+    geom_line(data=d,aes(Date,posFraction) )
+g0
+g1
+g2
 
 g2+ annotate("text", x=range(d$Date)[1], y=range(d$posFraction)[2],label = "-- rolling 7 day window", col="red",hjust = 0, vjust = 1, size = 4)
 g2+ annotate("text", x= min(d$Date)+1, y = max(d$posFraction), hjust=0,label = "-- rolling 7 day window", col="red", size = 4)

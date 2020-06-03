@@ -1,5 +1,12 @@
+# tmp files
 *~
-#*
+\#*
 
+## dirs to ignore
 data/
 tmp/
+
+# one-offs 
+?
+??
+?.?
