@@ -67,15 +67,15 @@ casesData <-
   mutate(newCases = Cases - lag(Cases, n=lag,default = NA)) %>% 
   mutate(newTests = Tests - lag(Tests,n = lag, default = NA)) %>% 
   mutate(posFraction = newCases/newTests) %>% 
-    mutate(newCases.per1000 = newCases/Population*1000/lag )
-
-
+  mutate(newCases.per1000 = newCases/Population*1000/lag ) %>% 
+  mutate(newTests.per1000 = newTests/Population*1000/lag )
 
 casesData <- casesData %>% 
   mutate(dailyPos = Cases - lag(Cases,n=1)) %>% 
   mutate(dailyTests = Tests - lag(Tests,n=1)) %>% 
   mutate(dailyFractionPos = dailyPos/dailyTests) %>% 
-  mutate(Cases.per1000 = dailyPos/Population*1000)
+  mutate(Cases.per1000 = dailyPos/Population*1000) %>% 
+  mutate(Tests.per1000 = dailyTests/Population*1000)
 
 
 if (!is.null(args$outFile)) {
@@ -95,28 +95,11 @@ plotData <- function(county = "WI") {
     filter(Date > "2020-03-30") %>%
     filter(County == county)
   
-  ### barchart with daily positive rate
-  testingPlot <- ggplot(d, aes(x=Date, y=dailyFractionPos)) +
-    geom_bar(stat="identity", fill = "lightgrey") 
-  ## layer with weekly smoothing
-  testingPlot <- testingPlot +
-    geom_point(data=d, aes(x=Date, y=posFraction), col = "red") +
-    geom_line(data=d,aes(Date,posFraction),col = "red" )
-  
-  ### add annotations
+  ### values for title
   lastDate <- max(d$Date)
   cases <- (d %>%  filter(Date == lastDate & County == county))$Cases
   tests <- (d %>%  filter(Date == lastDate & County == county))$Tests
-  testingPlot <- testingPlot + 
-    annotate("text", x= min(d$Date)+1, y = max(d$dailyFractionPos, na.rm = TRUE), hjust=0,
-             label = paste0("-- rolling ",args$lag ," day window"),
-             col="red", size = 4) +
-    annotate("text", x= min(d$Date)+1, y = min(d$dailyFractionPos,na.rm =TRUE), hjust=0, vjust = 0,
-             label = "Testing", size = 6) +
-    labs(x = NULL, y ="Fraction positive") +
-    ggtitle(paste0(county,
-                   " (", tests, " cumulative tests and ", cases," cases on ", lastDate,")"))
-  
+
   ### barchart with daily new cases
   casesPlot <- ggplot(d, aes(x=Date, y=Cases.per1000)) +
     geom_bar(stat="identity", fill = "lightgrey") 
@@ -127,11 +110,42 @@ plotData <- function(county = "WI") {
   
   ## annotate
   casesPlot <- casesPlot + 
-    annotate("text", x= min(d$Date)+1, y = max(d$Cases.per1000,na.rm = TRUE), hjust=0,vjust=1,
+    annotate("text", x= min(d$Date)+1, y = max(d$Cases.per1000,na.rm = TRUE), hjust=0, vjust=1,
              label = "Confirmed Cases", size = 6) +
-    labs(x = NULL, y ="New Cases per 1000") 
+    annotate("text", x= max(d$Date)-1, y = max(d$Cases.per1000, na.rm = TRUE), hjust=1, vjust = 1,
+             label = paste0("-- rolling ",args$lag ," day window"),
+             col="red", size = 4) +
+    labs(x = NULL, y ="New Cases per 1000") +
+    ggtitle(paste0(county,
+                   " (", tests, " cumulative tests and ", cases," cases on ", lastDate,")"))
   
-  plots <- grid.arrange(testingPlot,casesPlot)
+  ### barchart with daily positive rate
+  testingPlot <- ggplot(d, aes(x=Date, y=dailyFractionPos)) +
+    geom_bar(stat="identity", fill = "lightgrey") 
+  ## layer with weekly smoothing
+  testingPlot <- testingPlot +
+    geom_point(data=d, aes(x=Date, y=posFraction), col = "red") +
+    geom_line(data=d,aes(Date,posFraction),col = "red" )
+  testingPlot <- testingPlot + 
+    annotate("text", x= min(d$Date)+1, y = max(d$dailyFractionPos,na.rm = TRUE), hjust=0, vjust=1,
+             label = "Positive Tests", size = 6) +
+    labs(x = NULL, y ="Fraction positive") 
+  
+  ### barchart with daily testing rate
+  testingVolumePlot <- ggplot(d, aes(x=Date, y=Tests.per1000)) +
+    geom_bar(stat="identity", fill = "lightgrey") 
+  ## layer with weekly smoothing
+  testingVolumePlot <- testingVolumePlot +
+    geom_point(data=d, aes(x=Date, y=newTests.per1000), col = "red") +
+    geom_line(data=d,aes(Date,newTests.per1000),col = "red" )
+  
+  ### add annotations
+  testingVolumePlot <- testingVolumePlot + 
+    annotate("text", x= min(d$Date)+1, y = max(d$Tests.per1000,na.rm = TRUE), hjust=0, vjust=1,
+             label = "Testing Volume", size = 6) +
+    labs(x = NULL, y ="Tests per 1000")
+  
+  plots <- grid.arrange(casesPlot,testingPlot, testingVolumePlot)
   return(plots)
 }
 
