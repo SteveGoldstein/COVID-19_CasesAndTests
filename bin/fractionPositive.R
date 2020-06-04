@@ -1,8 +1,7 @@
 library(dplyr)
 library(lubridate)
-library(lattice)
-library(latticeExtra)
 library(ggplot2)
+library(gridExtra)
 
 defaultArgs <- list (
   plotFile = NULL,
@@ -21,10 +20,6 @@ lag <- as.integer(args$lag)
 dhsURL <- 'https://opendata.arcgis.com/datasets/b913e9591eae4912b33dc5b4e88646c5_10.csv'
 censusURL <- "https://www2.census.gov/programs-surveys/popest/datasets/2010-2019/counties/totals/co-est2019-alldata.csv"
 
-### FIPS is an integer;
-##  this should be from Census data file directly;
-pop <- read.csv("data/processed/WiscPopulation.csv",stringsAsFactors = FALSE)
-## 
 if (!is.null(args$inFile)) {
   dataSource <- args$inFile
 } else {
@@ -52,11 +47,6 @@ dhsData <-  dhsData %>%
   select(-c("NEGATIVE")) %>% 
   arrange(Date) 
 
-weeklySmoothed <- 
-  dhsData %>% 
-  mutate(newCases = Cases - lag(Cases, n=lag,default = NA)) %>% 
-  mutate(newTests = Tests - lag(Tests,n = lag, default = NA)) %>% 
-  mutate(posFraction = newCases/newTests)
 
 ## get population data
 censusData <- read.csv(censusURL,stringsAsFactors = FALSE)
@@ -69,21 +59,24 @@ censusData <-
   rename(Population = "POPESTIMATE2019") %>% 
   mutate(County = sub("Wisconsin","WI",County))
 
-weeklySmoothed <-  weeklySmoothed %>% 
+dhsData <-  dhsData %>% 
   inner_join(censusData,by="County")
 
-## some first attempts:  (remember ntile(Population))
-#xyplot(posFraction ~ Date,weeklySmoothed, groups=County, type="l")
-#xyplot(posFraction ~ Date|ntile(Population,n=4),weeklySmoothed, groups=County, type="l")
+smoothed <- 
+  dhsData %>% 
+  mutate(newCases = Cases - lag(Cases, n=lag,default = NA)) %>% 
+  mutate(newTests = Tests - lag(Tests,n = lag, default = NA)) %>% 
+  mutate(posFraction = newCases/newTests) %>% 
+    mutate(newCases.per1000 = newCases/Population*1000/lag )
 
-#xyplot(posFraction ~ Date|ntile(Population,n=4),
-#       weeklySmoothed %>% filter(Date > "2020-05-01"), groups=County, type="l")
 
 
-dailyFraction <- weeklySmoothed %>% 
+dailyFraction <- smoothed %>% 
   mutate(dailyPos = Cases - lag(Cases,n=1)) %>% 
   mutate(dailyTests = Tests - lag(Tests,n=1)) %>% 
-  mutate(dailyFractionPos = dailyPos/dailyTests)
+  mutate(dailyFractionPos = dailyPos/dailyTests) %>% 
+  mutate(Cases.per1000 = dailyPos/Population*1000)
+
 
 if (!is.null(args$outFile)) {
     write.csv(dailyFraction,args$outFile, quote = FALSE, row.names = FALSE)
@@ -95,61 +88,10 @@ if (!is.null(args$plotFile)) {
     pdf("/dev/null")
 }
 
-x1 <- xyplot(posFraction ~ Date,
-       dailyFraction %>% 
-         filter(Date > "2020-05-01") %>% 
-         filter(County == "WI"),  
-       type=c("l","p")
-)
-
-x2 <- xyplot(dailyFractionPos ~ Date,
-             
-             dailyFraction %>% 
-               filter(Date > "2020-05-01") %>% 
-               filter(County == "WI"), 
-             #type=c("l","p"),
-             type="h", lwd = 10,
-             col = "red"
-)
-
-b1 <- barchart(dailyFractionPos ~ Date,
-         
-         dailyFraction %>% 
-           filter(Date > "2020-05-01") %>% 
-           filter(County == "WI"), 
-       horizontal = F,
-       col = "red",
-       y.same = TRUE,
-       x.same = TRUE
-       )
-
-b2 <- barchart(posFraction ~ Date,
-               
-               dailyFraction %>% 
-                 filter(Date > "2020-05-01") %>% 
-                 filter(County == "WI"), 
-               horizontal = F,
-               col = "blue",
-               fill  = F,
-               y.same = TRUE,
-               x.same = TRUE
-)
-
-#x1+x2
-#x2+b1
-#b1+x2
-#b1 + b2
-
 
 d <- dailyFraction %>%
   filter(Date > "2020-03-30") %>%
   filter(County == "WI")
-
-#ggplot(d, aes(x=Date, y=posFraction)) + geom_point() +geom_line() 
-#ggplot(d, aes(x=Date, y=dailyFractionPos)) + geom_point() +geom_line() 
-
-#g0 <- ggplot(data=d, aes(x=Date, y=posFraction)) +
-#    geom_line(data=d,aes(Date,posFraction))
 
 ### barchart with daily positive rate
 g1 <- ggplot(d, aes(x=Date, y=dailyFractionPos)) +
@@ -158,28 +100,46 @@ g1 <- ggplot(d, aes(x=Date, y=dailyFractionPos)) +
 g2 <- g1 +
     geom_point(data=d, aes(x=Date, y=posFraction), col = "red") +
     geom_line(data=d,aes(Date,posFraction),col = "red" )
-#g0
-#g1
-#g2
-
-#g2+ annotate("text", x=range(d$Date)[1], y=range(d$posFraction)[2],label = "-- rolling 7 day window", col="red",hjust = 0, vjust = 1, size = 4)
-#g2+ annotate("text", x= min(d$Date)+1, y = max(d$posFraction), hjust=0,label = "-- rolling 7 day window", col="red", size = 4)
-
-#g2+ annotate("text", x= min(d$Date)+1, y = max(d$dailyFractionPos), hjust=0,
-#             label = "-- rolling 7 day window", col="red", size = 4)
 
 ### add annotations
 countyName <- "WI"
 lastDate <- max(d$Date)
 cases <- (d %>%  filter(Date == lastDate & County == countyName))$Cases
-
+tests <- (d %>%  filter(Date == lastDate & County == countyName))$Tests
 g3 <- g2+ 
   annotate("text", x= min(d$Date)+1, y = max(d$dailyFractionPos), hjust=0,
-                   label = "-- rolling 7 day window", col="red", size = 4) +
+           label = paste0("-- rolling ",args$lag ," day window"),
+                          col="red", size = 4) +
   ylab("Fraction positive") +
-  ggtitle(paste0(countyName," (", cases," cases on ", lastDate,")"))
-g3
+  ggtitle(paste0("Testing results for ",countyName,
+                 " (", tests, " cumulative tests and ", cases," cases on ", lastDate,")"))
+
+### barchart with daily new cases
+h1 <- ggplot(d, aes(x=Date, y=Cases.per1000)) +
+  geom_bar(stat="identity", fill = "lightgrey") 
+## layer with weekly smoothing
+h2 <- h1 +
+  geom_point(data=d, aes(x=Date, y=newCases.per1000), col = "red") +
+  geom_line(data=d,aes(Date,newCases.per1000),col = "red" )
+
+## annotate
+h3 <- h2+ 
+  annotate("text", x= min(d$Date)+1, y = max(d$dailyFractionPos), hjust=0,
+           label = paste0("-- rolling ",args$lag ," day window"),
+           col="red", size = 4) +
+  ylab("New Cases per 1000") +
+  ggtitle(paste0("Confirmed cases for ",countyName,
+                 " (", tests, " cumulative tests and ", cases," cases on ", lastDate,")"))
+  #ggtitle(paste0(countyName," (", cases," cases on ", lastDate,")"))
+grid.arrange(g3,h3)
 dev.off()
+
 q()
 
+## to do:
+##   rename data structures;
+##   cache census data?
+##   all counties (facets or loop -- lapply?)
+
+## title and text: just once;  add text for tests, cases;
 
