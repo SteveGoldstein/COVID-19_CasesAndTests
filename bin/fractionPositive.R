@@ -110,8 +110,10 @@ g3 <- g2+
   annotate("text", x= min(d$Date)+1, y = max(d$dailyFractionPos), hjust=0,
            label = paste0("-- rolling ",args$lag ," day window"),
                           col="red", size = 4) +
-  ylab("Fraction positive") +
-  ggtitle(paste0("Testing results for ",countyName,
+  annotate("text", x= min(d$Date)+1, y = min(d$dailyFractionPos), hjust=0,
+           label = "Testing", size = 6) +
+  labs(x = NULL, y ="Fraction positive") +
+  ggtitle(paste0(countyName,
                  " (", tests, " cumulative tests and ", cases," cases on ", lastDate,")"))
 
 ### barchart with daily new cases
@@ -124,13 +126,10 @@ h2 <- h1 +
 
 ## annotate
 h3 <- h2+ 
-  annotate("text", x= min(d$Date)+1, y = max(d$dailyFractionPos), hjust=0,
-           label = paste0("-- rolling ",args$lag ," day window"),
-           col="red", size = 4) +
-  ylab("New Cases per 1000") +
-  ggtitle(paste0("Confirmed cases for ",countyName,
-                 " (", tests, " cumulative tests and ", cases," cases on ", lastDate,")"))
-  #ggtitle(paste0(countyName," (", cases," cases on ", lastDate,")"))
+  annotate("text", x= min(d$Date)+1, y = max(d$Cases.per1000), hjust=0,vjust=1,
+           label = "Confirmed Cases", size = 6) +
+  labs(x = NULL, y ="New Cases per 1000") 
+
 grid.arrange(g3,h3)
 dev.off()
 
