@@ -62,7 +62,7 @@ censusData <-
 dhsData <-  dhsData %>% 
   inner_join(censusData,by="County")
 
-smoothed <- 
+casesData <- 
   dhsData %>% 
   mutate(newCases = Cases - lag(Cases, n=lag,default = NA)) %>% 
   mutate(newTests = Tests - lag(Tests,n = lag, default = NA)) %>% 
@@ -71,7 +71,7 @@ smoothed <-
 
 
 
-dailyFraction <- smoothed %>% 
+casesData <- casesData %>% 
   mutate(dailyPos = Cases - lag(Cases,n=1)) %>% 
   mutate(dailyTests = Tests - lag(Tests,n=1)) %>% 
   mutate(dailyFractionPos = dailyPos/dailyTests) %>% 
@@ -79,7 +79,7 @@ dailyFraction <- smoothed %>%
 
 
 if (!is.null(args$outFile)) {
-    write.csv(dailyFraction,args$outFile, quote = FALSE, row.names = FALSE)
+    write.csv(casesData,args$outFile, quote = FALSE, row.names = FALSE)
 }
 
 if (!is.null(args$plotFile)) {
@@ -89,48 +89,54 @@ if (!is.null(args$plotFile)) {
 }
 
 
-d <- dailyFraction %>%
-  filter(Date > "2020-03-30") %>%
-  filter(County == "WI")
 
-### barchart with daily positive rate
-g1 <- ggplot(d, aes(x=Date, y=dailyFractionPos)) +
+plotData <- function(county = "WI") {
+  d <- casesData %>%
+    filter(Date > "2020-03-30") %>%
+    filter(County == county)
+  
+  ### barchart with daily positive rate
+  testingPlot <- ggplot(d, aes(x=Date, y=dailyFractionPos)) +
     geom_bar(stat="identity", fill = "lightgrey") 
-## layer with weekly smoothing
-g2 <- g1 +
+  ## layer with weekly smoothing
+  testingPlot <- testingPlot +
     geom_point(data=d, aes(x=Date, y=posFraction), col = "red") +
     geom_line(data=d,aes(Date,posFraction),col = "red" )
+  
+  ### add annotations
+  lastDate <- max(d$Date)
+  cases <- (d %>%  filter(Date == lastDate & County == county))$Cases
+  tests <- (d %>%  filter(Date == lastDate & County == county))$Tests
+  testingPlot <- testingPlot + 
+    annotate("text", x= min(d$Date)+1, y = max(d$dailyFractionPos, na.rm = TRUE), hjust=0,
+             label = paste0("-- rolling ",args$lag ," day window"),
+             col="red", size = 4) +
+    annotate("text", x= min(d$Date)+1, y = min(d$dailyFractionPos,na.rm =TRUE), hjust=0, vjust = 0,
+             label = "Testing", size = 6) +
+    labs(x = NULL, y ="Fraction positive") +
+    ggtitle(paste0(county,
+                   " (", tests, " cumulative tests and ", cases," cases on ", lastDate,")"))
+  
+  ### barchart with daily new cases
+  casesPlot <- ggplot(d, aes(x=Date, y=Cases.per1000)) +
+    geom_bar(stat="identity", fill = "lightgrey") 
+  ## layer with weekly smoothing
+  casesPlot <- casesPlot +
+    geom_point(data=d, aes(x=Date, y=newCases.per1000), col = "red") +
+    geom_line(data=d,aes(Date,newCases.per1000),col = "red" )
+  
+  ## annotate
+  casesPlot <- casesPlot + 
+    annotate("text", x= min(d$Date)+1, y = max(d$Cases.per1000,na.rm = TRUE), hjust=0,vjust=1,
+             label = "Confirmed Cases", size = 6) +
+    labs(x = NULL, y ="New Cases per 1000") 
+  
+  plots <- grid.arrange(testingPlot,casesPlot)
+  return(plots)
+}
 
-### add annotations
-countyName <- "WI"
-lastDate <- max(d$Date)
-cases <- (d %>%  filter(Date == lastDate & County == countyName))$Cases
-tests <- (d %>%  filter(Date == lastDate & County == countyName))$Tests
-g3 <- g2+ 
-  annotate("text", x= min(d$Date)+1, y = max(d$dailyFractionPos), hjust=0,
-           label = paste0("-- rolling ",args$lag ," day window"),
-                          col="red", size = 4) +
-  annotate("text", x= min(d$Date)+1, y = min(d$dailyFractionPos), hjust=0,
-           label = "Testing", size = 6) +
-  labs(x = NULL, y ="Fraction positive") +
-  ggtitle(paste0(countyName,
-                 " (", tests, " cumulative tests and ", cases," cases on ", lastDate,")"))
-
-### barchart with daily new cases
-h1 <- ggplot(d, aes(x=Date, y=Cases.per1000)) +
-  geom_bar(stat="identity", fill = "lightgrey") 
-## layer with weekly smoothing
-h2 <- h1 +
-  geom_point(data=d, aes(x=Date, y=newCases.per1000), col = "red") +
-  geom_line(data=d,aes(Date,newCases.per1000),col = "red" )
-
-## annotate
-h3 <- h2+ 
-  annotate("text", x= min(d$Date)+1, y = max(d$Cases.per1000), hjust=0,vjust=1,
-           label = "Confirmed Cases", size = 6) +
-  labs(x = NULL, y ="New Cases per 1000") 
-
-grid.arrange(g3,h3)
+wiCounties <- casesData %>% select(County) %>% filter(County != "WI") %>% distinct %>% unlist
+lapply(c("WI",wiCounties), function(cty) {plotData(cty)})
 dev.off()
 
 q()
