@@ -1,3 +1,6 @@
 ##cmd:
-Rscript --vanilla bin/fractionPositive.R -outFile 2020-06-04/casesData.lag7.csv -plotFile 2020-06-04/dailyCases.lag7.csv -lag 7 1> lag.7.out 2> lag.7.err & 
-Rscript --vanilla bin/fractionPositive.R -outFile 2020-06-04/casesData.lag14.csv -plotFile 2020-06-04/dailyCases.lag14.csv -lag 14 1> lag.14.out 2> lag.14.err &
+Rscript --vanilla bin/fractionPositive.R -outFile 2020-06-04/casesData.lag7.csv -plotFile 2020-06-04/dailyCases.lag7.pdf -lag 7 1> lag.7.out 2> lag.7.err & 
+Rscript --vanilla bin/fractionPositive.R -outFile 2020-06-04/casesData.lag14.csv -plotFile 2020-06-04/dailyCases.lag14.pdf -lag 14 1> lag.14.out 2> lag.14.err &
+
+## git commit
+commit 99530361fd1  order by population
