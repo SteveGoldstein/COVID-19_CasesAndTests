@@ -117,8 +117,10 @@ plotData <- function(county = "WI") {
              col="red", size = 4) +
     labs(x = NULL, y ="New Cases per 1000") +
     ggtitle(paste0(county,
-                   " (", tests, " cumulative tests and ", cases," cases on ", lastDate,")"))
-  
+                  # " (", tests, " cumulative tests and ", cases," cases on ", lastDate,")"))
+                  " (", lastDate, " totals: ", cases, " cases; ", tests, " tests)"
+                  ))
+    
   ### barchart with daily positive rate
   testingPlot <- ggplot(d, aes(x=Date, y=dailyFractionPos)) +
     geom_bar(stat="identity", fill = "lightgrey") 
@@ -149,8 +151,11 @@ plotData <- function(county = "WI") {
   return(plots)
 }
 
-wiCounties <- casesData %>% select(County) %>% filter(County != "WI") %>% distinct %>% unlist
-lapply(c("WI",wiCounties), function(cty) {plotData(cty)})
+#### Sort counties by population in decreasing order
+wiCounties <- casesData %>% 
+  arrange(desc(Population)) %>% 
+  select(County) %>% distinct %>% unlist
+lapply(wiCounties, function(cty) {plotData(cty)})
 dev.off()
 
 q()
