@@ -147,7 +147,8 @@ plotData <- function(county = "WI") {
              label = "Testing Volume", size = 6) +
     labs(x = NULL, y ="Tests per 1000")
   
-  plots <- grid.arrange(casesPlot,testingPlot, testingVolumePlot)
+  #plots <- grid.arrange(casesPlot,testingPlot, testingVolumePlot)
+  plots <- arrangeGrob(casesPlot,testingPlot, testingVolumePlot)
   return(plots)
 }
 
@@ -155,7 +156,10 @@ plotData <- function(county = "WI") {
 wiCounties <- casesData %>% 
   arrange(desc(Population)) %>% 
   select(County) %>% distinct %>% unlist
-lapply(wiCounties, function(cty) {plotData(cty)})
+plotGrobList <- lapply(wiCounties, function(cty) {plotData(cty)})
+
+grid.arrange(grobs = plotGrobList[1:4], ncol=2, nrow=2)
+
 dev.off()
 
 q()
