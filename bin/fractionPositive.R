@@ -89,7 +89,12 @@ if (!is.null(args$plotFile)) {
     pdf("/dev/null")
 }
 
-plotData <- function(county = "WI", textSize = c(3,8,6), objSize = c(0.2,0.4)) {
+plotData <- function(county = "WI", 
+                     textSize = c(3,8,6),  ## plot label, title, axis label
+                     objSize = c(0.2,0.4), ## points and line sizes
+                     yMax = 0.5            ## upper limit for dailyFractionPos
+                     ) {
+  ##### subset data
   d <- casesData %>%
     filter(Date > "2020-03-30") %>%
     filter(County == county)
@@ -127,7 +132,15 @@ plotData <- function(county = "WI", textSize = c(3,8,6), objSize = c(0.2,0.4)) {
   ### barchart with daily positive rate
   testingPlot <- ggplot(d, aes(x=Date, y=dailyFractionPos)) +
     geom_bar(stat="identity", fill = "lightgrey")
-    
+  
+  ### truncate y axis to yMax
+  yLimits <-  ggplot_build(testingPlot)$layout$panel_params[[1]]$y.range
+  if (yLimits[2] > yMax) {
+    maxY <- max(d$dailyFractionPos,na.rm=T)
+    testingPlot <- testingPlot +
+      coord_cartesian(ylim = c(yLimits[1], yMax*1.05),expand = FALSE)
+  }
+
   ## layer with weekly smoothing
   testingPlot <- testingPlot +
     geom_point(data=d, aes(x=Date, y=posFraction), col = "red", size = objSize[1]) +
@@ -161,6 +174,7 @@ plotData <- function(county = "WI", textSize = c(3,8,6), objSize = c(0.2,0.4)) {
   return(plots)
 }
 
+
 #### Sort counties by population in decreasing order
 wiCounties <- casesData %>% 
   arrange(desc(Population)) %>% 
@@ -181,8 +195,7 @@ q()
 
 ## to do:
 ##   cache census data?
-##  finish county loop;
-##  y axis text size;  remove y axis label for other columns;
-##  line width and size of dots;
-## title and text: just once;  add text for tests, cases;
+##  
+##  remove y axis label for other columns;
+##  indicate truncation of y axis with whitespace in a bar?
 
