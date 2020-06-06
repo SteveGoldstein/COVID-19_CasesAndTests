@@ -2,6 +2,7 @@ library(dplyr)
 library(lubridate)
 library(ggplot2)
 library(gridExtra)
+library(cowplot)
 
 defaultArgs <- list (
   plotFile = NULL,
@@ -88,14 +89,13 @@ if (!is.null(args$plotFile)) {
     pdf("/dev/null")
 }
 
-
-
-plotData <- function(county = "WI") {
+plotData <- function(county = "WI", textSize = c(3,8,6), objSize = c(0.2,0.4)) {
   d <- casesData %>%
     filter(Date > "2020-03-30") %>%
     filter(County == county)
   
   ### values for title
+  firstDate <- min(d$Date)
   lastDate <- max(d$Date)
   cases <- (d %>%  filter(Date == lastDate & County == county))$Cases
   tests <- (d %>%  filter(Date == lastDate & County == county))$Tests
@@ -105,50 +105,59 @@ plotData <- function(county = "WI") {
     geom_bar(stat="identity", fill = "lightgrey") 
   ## layer with weekly smoothing
   casesPlot <- casesPlot +
-    geom_point(data=d, aes(x=Date, y=newCases.per1000), col = "red") +
-    geom_line(data=d,aes(Date,newCases.per1000),col = "red" )
+    geom_point(data=d, aes(x=Date, y=newCases.per1000), col = "red", size = objSize[1]) +
+    geom_line(data=d,aes(Date,newCases.per1000),col = "red", size = objSize[2] )
   
   ## annotate
   casesPlot <- casesPlot + 
     annotate("text", x= min(d$Date)+1, y = max(d$Cases.per1000,na.rm = TRUE), hjust=0, vjust=1,
-             label = "Confirmed Cases", size = 6) +
+             label = "Confirmed Cases", size = textSize[1]) +
     annotate("text", x= max(d$Date)-1, y = max(d$Cases.per1000, na.rm = TRUE), hjust=1, vjust = 1,
              label = paste0("-- rolling ",args$lag ," day window"),
-             col="red", size = 4) +
+             col="red", size = textSize[1]) +
     labs(x = NULL, y ="New Cases per 1000") +
     ggtitle(paste0(county,
-                  # " (", tests, " cumulative tests and ", cases," cases on ", lastDate,")"))
                   " (", lastDate, " totals: ", cases, " cases; ", tests, " tests)"
-                  ))
+                  )) +
+    theme(plot.title = element_text(size = textSize[2]),
+          axis.text.x = element_blank(),
+          axis.title = element_text(size = textSize[3])
+          ) 
     
   ### barchart with daily positive rate
   testingPlot <- ggplot(d, aes(x=Date, y=dailyFractionPos)) +
-    geom_bar(stat="identity", fill = "lightgrey") 
+    geom_bar(stat="identity", fill = "lightgrey")
+    
   ## layer with weekly smoothing
   testingPlot <- testingPlot +
-    geom_point(data=d, aes(x=Date, y=posFraction), col = "red") +
-    geom_line(data=d,aes(Date,posFraction),col = "red" )
+    geom_point(data=d, aes(x=Date, y=posFraction), col = "red", size = objSize[1]) +
+    geom_line(data=d,aes(Date,posFraction),col = "red", size = objSize[2] )
   testingPlot <- testingPlot + 
     annotate("text", x= min(d$Date)+1, y = max(d$dailyFractionPos,na.rm = TRUE), hjust=0, vjust=1,
-             label = "Positive Tests", size = 6) +
-    labs(x = NULL, y ="Fraction positive") 
+             label = "Positive Tests", size = textSize[1]) +
+    labs(x = NULL, y ="Fraction positive") +
+    theme(axis.title = element_text(size = textSize[3]))  + 
+    theme(axis.text.x = element_blank())
   
   ### barchart with daily testing rate
   testingVolumePlot <- ggplot(d, aes(x=Date, y=Tests.per1000)) +
-    geom_bar(stat="identity", fill = "lightgrey") 
+    geom_bar(stat="identity", fill = "lightgrey")
+    
   ## layer with weekly smoothing
   testingVolumePlot <- testingVolumePlot +
-    geom_point(data=d, aes(x=Date, y=newTests.per1000), col = "red") +
-    geom_line(data=d,aes(Date,newTests.per1000),col = "red" )
+    geom_point(data=d, aes(x=Date, y=newTests.per1000), col = "red", size = objSize[1] ) +
+    geom_line(data=d,aes(Date,newTests.per1000),col = "red", size = objSize[2] )
   
   ### add annotations
   testingVolumePlot <- testingVolumePlot + 
     annotate("text", x= min(d$Date)+1, y = max(d$Tests.per1000,na.rm = TRUE), hjust=0, vjust=1,
-             label = "Testing Volume", size = 6) +
-    labs(x = NULL, y ="Tests per 1000")
+             label = "Testing Volume", size = textSize[1]) +
+    labs(x = NULL, y ="Tests per 1000") +
+    theme(axis.title = element_text(size = textSize[3]))   
   
-  #plots <- grid.arrange(casesPlot,testingPlot, testingVolumePlot)
-  plots <- arrangeGrob(casesPlot,testingPlot, testingVolumePlot)
+  margin = theme(plot.margin = unit(c(1,0.5,0,0), "cm"))
+  plots <- plot_grid(casesPlot,testingPlot, testingVolumePlot,ncol=1,align="v") +
+    margin
   return(plots)
 }
 
@@ -158,16 +167,22 @@ wiCounties <- casesData %>%
   select(County) %>% distinct %>% unlist
 plotGrobList <- lapply(wiCounties, function(cty) {plotData(cty)})
 
-grid.arrange(grobs = plotGrobList[1:4], ncol=2, nrow=2)
+## Plot state on first page;
+grid.arrange(plotGrobList[[1]])
+
+for (i in seq(2,length(wiCounties), by=4)) {
+  grid.arrange(grobs = plotGrobList[i:(i+3)], ncol=2, nrow=2)
+}
+
 
 dev.off()
 
 q()
 
 ## to do:
-##   rename data structures;
 ##   cache census data?
-##   all counties (facets or loop -- lapply?)
-
+##  finish county loop;
+##  y axis text size;  remove y axis label for other columns;
+##  line width and size of dots;
 ## title and text: just once;  add text for tests, cases;
 
