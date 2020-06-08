@@ -1,8 +1,13 @@
 # ideasAndExamples
 
-5/27/2020:
-	Experiment 1:  look at today's testing rate and compare;
-		   highest increase in counties in numbers and pos rate;
-	 
-	Idea 1:   get going with populationStatification
+Comparing case counts, fraction positive test results, and testing
+volume time series for each county.
+
+Notes:
+	Counties are ordered by population;
+	
+	On some of the test result plots, the y-axis is truncated at
+	0.5.
+
+
 

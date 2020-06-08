@@ -1,0 +1,8 @@
+###  git commit:  aaa0dce   fixed annoying xlim issue;  now plots are aligned
+     
+### cmd:
+Rscript --vanilla bin/fractionPositive.R -outFile 2020-06-08/testsAndCases.7DaySmoothing.csv -lag 7 -plotFile 2020-06-08/testsAndCases.7DaySmoothing.pdf 1> 2020-06-08/testsAndCases.7DaySmoothing.out 2> 2020-06-08/testsAndCases.7DaySmoothing.err &
+
+Rscript --vanilla bin/fractionPositive.R -outFile 2020-06-08/testsAndCases.14DaySmoothing.csv -lag 14 -plotFile 2020-06-08/testsAndCases.14DaySmoothing.pdf 1> 2020-06-08/testsAndCases.14DaySmoothing.out 2> 2020-06-08/testsAndCases.14DaySmoothing.err &
+
+
