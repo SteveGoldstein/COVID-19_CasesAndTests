@@ -7,8 +7,9 @@ library(cowplot)
 defaultArgs <- list (
   plotFile = NULL,
   outFile =  NULL,
-  lag = 7,
-  inFile = NULL,       ## by-pass download
+  lag = 7,              ## smoothing interval (days)
+  posFractionMax = 0.5, ## threshold for truncating y axis on testing plot
+  inFile = NULL,        ## hook to by-pass download for functional tests
   
   verbose = FALSE
 )
@@ -92,7 +93,7 @@ if (!is.null(args$plotFile)) {
 plotData <- function(county = "WI", 
                      textSize = c(3,8,6),  ## plot label, title, axis label
                      objSize = c(0.2,0.4), ## points and line sizes
-                     yMax = 0.5            ## upper limit for dailyFractionPos
+                     yMax = as.numeric(args$posFractionMax)   ## upper limit for dailyFractionPos
                      ) {
   ##### subset data
   d <- casesData %>%
@@ -117,7 +118,7 @@ plotData <- function(county = "WI",
   casesPlot <- casesPlot + 
     annotate("text", x= min(d$Date)+1, y = max(d$Cases.per1000,na.rm = TRUE), hjust=0, vjust=1,
              label = "Confirmed Cases", size = textSize[1]) +
-    annotate("text", x= max(d$Date)-1, y = max(d$Cases.per1000, na.rm = TRUE), hjust=1, vjust = 1,
+    annotate("text", x= max(d$Date)-1, y = max(d$Cases.per1000, na.rm =TRUE), hjust=1, vjust = 1,
              label = paste0("-- rolling ",args$lag ," day window"),
              col="red", size = textSize[1]) +
     labs(x = NULL, y ="New Cases per 1000") +
@@ -136,9 +137,11 @@ plotData <- function(county = "WI",
   ### truncate y axis to yMax
   yLimits <-  ggplot_build(testingPlot)$layout$panel_params[[1]]$y.range
   if (yLimits[2] > yMax) {
-    maxY <- max(d$dailyFractionPos,na.rm=T)
     testingPlot <- testingPlot +
       coord_cartesian(ylim = c(yLimits[1], yMax*1.05),expand = FALSE)
+  } else {
+    ## yMax determines placement of text annotation
+    yMax <- max(d$dailyFractionPos,na.rm = TRUE)
   }
 
   ## layer with weekly smoothing
@@ -146,7 +149,7 @@ plotData <- function(county = "WI",
     geom_point(data=d, aes(x=Date, y=posFraction), col = "red", size = objSize[1]) +
     geom_line(data=d,aes(Date,posFraction),col = "red", size = objSize[2] )
   testingPlot <- testingPlot + 
-    annotate("text", x= min(d$Date)+1, y = max(d$dailyFractionPos,na.rm = TRUE), hjust=0, vjust=1,
+    annotate("text", x= min(d$Date)+1, y = yMax, hjust=0, vjust=1,
              label = "Positive Tests", size = textSize[1]) +
     labs(x = NULL, y ="Fraction positive") +
     theme(axis.title = element_text(size = textSize[3]))  + 
@@ -197,5 +200,6 @@ q()
 ##   cache census data?
 ##  
 ##  remove y axis label for other columns;
+##  print annotations dependent on column in the layout.
 ##  indicate truncation of y axis with whitespace in a bar?
 
