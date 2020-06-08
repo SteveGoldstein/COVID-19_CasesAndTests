@@ -137,8 +137,11 @@ plotData <- function(county = "WI",
   ### truncate y axis to yMax
   yLimits <-  ggplot_build(testingPlot)$layout$panel_params[[1]]$y.range
   if (yLimits[2] > yMax) {
+    expansionFactor <- 1.05  ## determined empirically for this plot; might be incorrect if the plot is tweaked
     testingPlot <- testingPlot +
-      coord_cartesian(ylim = c(yLimits[1], yMax*1.05),expand = FALSE)
+      coord_cartesian(xlim=c(firstDate,lastDate), 
+                      ylim = c(yLimits[1]/expansionFactor, yMax),
+                      expand = TRUE)
   } else {
     ## yMax determines placement of text annotation
     yMax <- max(d$dailyFractionPos,na.rm = TRUE)
@@ -176,6 +179,7 @@ plotData <- function(county = "WI",
     margin
   return(plots)
 }
+
 
 
 #### Sort counties by population in decreasing order
