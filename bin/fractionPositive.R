@@ -141,7 +141,7 @@ plotData <- function(county = "WI",
   
   ### Annotate with DHS criteria
   yLimits <-  ggplot_build(casesPlot)$layout$panel_params[[1]]$y.range
-  advisoryLevel <- c("Med", "Med High", "High")
+  advisoryLevel <- c("Moderate", "Moderately High", "High")
   ncategories <- length(burdenPerDayPer1k)
   ## annotate lowest level
   casesPlot <-  casesPlot +
