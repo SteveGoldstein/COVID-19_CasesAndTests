@@ -1,3 +1,4 @@
+## Setup ---------------
 library(dplyr)
 library(lubridate)
 library(ggplot2)
@@ -10,7 +11,8 @@ defaultArgs <- list (
   lag = 7,              ## smoothing interval (days)
   posFractionMax = 0.5, ## threshold for truncating y axis on testing plot
   inFile = NULL,        ## hook to by-pass download for functional tests
-  
+
+  popGroupingSize = 70000,    ## group counties to get at least N in each group.
   verbose = FALSE
 )
 
@@ -28,7 +30,7 @@ if (!is.null(args$inFile)) {
   dataSource <- dhsURL 
 }
 
-### read data and reformat: 
+### read and format data -----------------------------------
 dhsData <- 
   read.csv(dataSource,stringsAsFactors = FALSE) %>% 
   select(2:7) %>% 
@@ -64,6 +66,7 @@ censusData <-
 dhsData <-  dhsData %>% 
   inner_join(censusData,by="County")
 
+##########  process data ---------------
 casesData <- 
   dhsData %>% 
   mutate(newCases = Cases - lag(Cases, n=lag,default = NA)) %>% 
@@ -79,7 +82,7 @@ casesData <- casesData %>%
   mutate(Cases.per1000 = dailyPos/Population*1000) %>% 
   mutate(Tests.per1000 = dailyTests/Population*1000)
 
-
+###  output csv and initailize plot -----------
 if (!is.null(args$outFile)) {
     write.csv(casesData,args$outFile, quote = FALSE, row.names = FALSE)
 }
@@ -90,6 +93,7 @@ if (!is.null(args$plotFile)) {
     pdf("/dev/null")
 }
 
+###  plot function  ----------------------
 plotData <- function(county = "WI", 
                      textSize = c(3,8,6),  ## plot label, title, axis label
                      objSize = c(0.2,0.4), ## points and line sizes
@@ -97,7 +101,7 @@ plotData <- function(county = "WI",
                      ) {
   ##### subset data
   d <- casesData %>%
-    filter(Date > "2020-03-30") %>%
+    filter(Date >= "2020-05-01") %>%
     filter(County == county)
   
   ### values for title
@@ -105,7 +109,12 @@ plotData <- function(county = "WI",
   lastDate <- max(d$Date)
   cases <- (d %>%  filter(Date == lastDate & County == county))$Cases
   tests <- (d %>%  filter(Date == lastDate & County == county))$Tests
-
+  
+  ### Burden thresholds for DHS stages;
+  burden14DayPer100k <- c(10,50,100)
+  burdenPerDayPer1k <- burden14DayPer100k/14/100
+  ##################################################################
+  ## Top panel
   ### barchart with daily new cases
   casesPlot <- ggplot(d, aes(x=Date, y=Cases.per1000)) +
     geom_bar(stat="identity", fill = "lightgrey") 
@@ -128,8 +137,38 @@ plotData <- function(county = "WI",
     theme(plot.title = element_text(size = textSize[2]),
           axis.text.x = element_blank(),
           axis.title = element_text(size = textSize[3])
-          ) 
-    
+          )
+  
+  ### Annotate with DHS criteria
+  yLimits <-  ggplot_build(casesPlot)$layout$panel_params[[1]]$y.range
+  advisoryLevel <- c("Med", "Med High", "High")
+  ncategories <- length(burdenPerDayPer1k)
+  ## annotate lowest level
+  casesPlot <-  casesPlot +
+    annotate("text", x= min(d$Date), 
+             #y = mean(c(yLimits[1], burdenPerDayPer1k[1])), 
+             y = burdenPerDayPer1k[1], 
+             hjust=0, vjust=1,
+             label = "Low", size = textSize[1]*0.75,col = "blue")
+  burdenPerDayPer1k <- c(burdenPerDayPer1k, yLimits[2]) ## facilitate placement of "High" label;
+  
+  for(b in 1:ncategories) {
+    if (burdenPerDayPer1k[b] < yLimits[2]) {
+      casesPlot <- casesPlot +
+        geom_hline(yintercept = burdenPerDayPer1k[b], 
+                   linetype=4-b, size = 0.2, col = "blue") +
+        annotate("text", x= min(d$Date)+b, 
+                 y = mean(c(burdenPerDayPer1k[b], burdenPerDayPer1k[b+1])), 
+                 hjust=0, vjust= 0.5,
+                 label = advisoryLevel[b], size = textSize[1]*0.75,col = "blue")
+    }
+  }
+  casesPlot <- casesPlot +
+    geom_vline(xintercept = lastDate-7,linetype = 3, size = 0.2) +
+    geom_vline(xintercept = lastDate-14,linetype = 3, size = 0.2)
+
+  ##################################################################
+  ## Middle panel  
   ### barchart with daily positive rate
   testingPlot <- ggplot(d, aes(x=Date, y=dailyFractionPos)) +
     geom_bar(stat="identity", fill = "lightgrey")
@@ -152,12 +191,18 @@ plotData <- function(county = "WI",
     geom_point(data=d, aes(x=Date, y=posFraction), col = "red", size = objSize[1]) +
     geom_line(data=d,aes(Date,posFraction),col = "red", size = objSize[2] )
   testingPlot <- testingPlot + 
-    annotate("text", x= min(d$Date)+1, y = yMax, hjust=0, vjust=1,
+    annotate("text", x= min(d$Date)+1, y = yMax, hjust=0, vjust=0,
              label = "Positive Tests", size = textSize[1]) +
     labs(x = NULL, y ="Fraction positive") +
     theme(axis.title = element_text(size = textSize[3]))  + 
-    theme(axis.text.x = element_blank())
+    theme(axis.text.x = element_blank()) +
+    ## DHS criteria: 1 and 2 wks ago
+    geom_vline(xintercept = lastDate-7,linetype = 3, size = 0.2) +
+    geom_vline(xintercept = lastDate-14,linetype = 3, size = 0.2)
   
+  
+  ##################################################################
+  ## Bottom panel
   ### barchart with daily testing rate
   testingVolumePlot <- ggplot(d, aes(x=Date, y=Tests.per1000)) +
     geom_bar(stat="identity", fill = "lightgrey")
@@ -172,7 +217,10 @@ plotData <- function(county = "WI",
     annotate("text", x= min(d$Date)+1, y = max(d$Tests.per1000,na.rm = TRUE), hjust=0, vjust=1,
              label = "Testing Volume", size = textSize[1]) +
     labs(x = NULL, y ="Tests per 1000") +
-    theme(axis.title = element_text(size = textSize[3]))   
+    theme(axis.title = element_text(size = textSize[3])) +
+    ## DHS criteria: 1 and 2 wks ago
+    geom_vline(xintercept = lastDate-7,linetype = 3, size = 0.2) +
+    geom_vline(xintercept = lastDate-14,linetype = 3, size = 0.2)
   
   margin = theme(plot.margin = unit(c(1,0.5,0,0), "cm"))
   plots <- plot_grid(casesPlot,testingPlot, testingVolumePlot,ncol=1,align="v") +
@@ -181,24 +229,38 @@ plotData <- function(county = "WI",
 }
 
 
+###  Generate plots --------------------
+
+### hack:  just the counties in blue on the DHS map
+dhsBlue <- c("Polk","Trempealeau","La Crosse","Lafayette","Rock",
+             "Walworth","Racine","Kenosha","Jefferson","Waukesha",
+             "Milwaukee","Dodge","Ozaukee","Fond du Lac","Sheboygan",
+             "Winnebago","Portage","Waupaca","Forest"
+             )
 
 #### Sort counties by population in decreasing order
 wiCounties <- casesData %>% 
   arrange(desc(Population)) %>% 
-  select(County) %>% distinct %>% unlist
+  select(County) %>% distinct %>% 
+  filter(County %in% dhsBlue) %>% 
+  unlist
+
+
 plotGrobList <- lapply(wiCounties, function(cty) {plotData(cty)})
 
-## Plot state on first page;
-grid.arrange(plotGrobList[[1]])
 
-for (i in seq(2,length(wiCounties), by=4)) {
-  grid.arrange(grobs = plotGrobList[i:(i+3)], ncol=2, nrow=2)
+listIndices <- seq(1,length(wiCounties), by = 2)
+
+for (i in listIndices[-length(listIndices)]) {
+    grid.arrange(grobs = plotGrobList[i:(i+1)], ncol=2, nrow=1)
 }
 
-
+## last page might not have ncol*nrow plots  
+grid.arrange(grobs = plotGrobList[last(listIndices):length(wiCounties)], ncol=2, nrow=1)
+    
 dev.off()
 
-q()
+#q()
 
 ## to do:
 ##   cache census data?
