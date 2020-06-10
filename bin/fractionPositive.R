@@ -63,8 +63,15 @@ censusData <-
   rename(Population = "POPESTIMATE2019") %>% 
   mutate(County = sub("Wisconsin","WI",County))
 
-dhsData <-  dhsData %>% 
-  inner_join(censusData,by="County")
+## order by regions;
+dhsRegions <- read.csv("data/raw/wi_dph_regions.csv", stringsAsFactors = FALSE)
+dhsRegions <- dhsRegions %>% 
+  rename(FIPS = geoid) %>% 
+  mutate(FIPS = as.character(FIPS))
+dhsData <- dhsData %>%  
+  inner_join(censusData,by="County") %>% 
+  inner_join(dhsRegions,by=c("FIPS", "County"))
+
 
 ##########  process data ---------------
 casesData <- 
@@ -131,7 +138,7 @@ plotData <- function(county = "WI",
              label = paste0("-- rolling ",args$lag ," day window"),
              col="red", size = textSize[1]) +
     labs(x = NULL, y ="New Cases per 1000") +
-    ggtitle(paste0(county,
+    ggtitle(paste0(d$Region, ":  ",county, 
                   " (", lastDate, " totals: ", cases, " cases; ", tests, " tests)"
                   )) +
     theme(plot.title = element_text(size = textSize[2]),
@@ -231,18 +238,15 @@ plotData <- function(county = "WI",
 
 ###  Generate plots --------------------
 
-### hack:  just the counties in blue on the DHS map
-dhsBlue <- c("Polk","Trempealeau","La Crosse","Lafayette","Rock",
-             "Walworth","Racine","Kenosha","Jefferson","Waukesha",
-             "Milwaukee","Dodge","Ozaukee","Fond du Lac","Sheboygan",
-             "Winnebago","Portage","Waupaca","Forest"
-             )
 
-#### Sort counties by population in decreasing order
+## task 1:   plot the regions in separate pdfs;
+## our just add label to county with region; sort by region then pop;
+
+
+#### Sort counties by region then population in decreasing order
 wiCounties <- casesData %>% 
-  arrange(desc(Population)) %>% 
+    arrange(Region,desc(Population)) %>% 
   select(County) %>% distinct %>% 
-  filter(County %in% dhsBlue) %>% 
   unlist
 
 
