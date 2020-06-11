@@ -6,6 +6,7 @@ library(gridExtra)
 library(cowplot)
 
 source("lib/plotCasesAndTests.R")
+source("lib/processData.R")
 
 defaultArgs <- list (
   plotFile = NULL,
@@ -33,44 +34,13 @@ if (!is.null(args$inFile)) {
 }
 
 ### read and format data -----------------------------------
-dhsData <- 
-  read.csv(dataSource,stringsAsFactors = FALSE) %>% 
-  select(2:7) %>% 
-  filter(GEO == "County" | GEO == "State") %>% 
-  mutate(LoadDttm = ymd(as.Date(.$LoadDttm))) %>% 
-  rename(FIPS = "GEOID") %>% 
-  rename(Date = "LoadDttm") %>% 
-  rename(County = "NAME")
-
-## enforce monotonicity in positive and negative test results;
-dhsData <-  dhsData %>% 
-  group_by(County) %>% 
-  arrange(desc(Date)) %>% 
-  mutate(NEGATIVE = cummin(NEGATIVE)) %>% 
-  mutate(POSITIVE = cummin(POSITIVE)) %>% 
-  mutate(Tests = NEGATIVE + POSITIVE) %>% 
-  rename(Cases = "POSITIVE") %>% 
-  select(-c("NEGATIVE")) %>% 
-  arrange(Date) 
-
+dhsData <- getDHS_Data(dataSource)
 
 ## get population data
-censusData <- read.csv(censusURL,stringsAsFactors = FALSE)
-censusData <- 
-  censusData %>% 
-  filter(STNAME == "Wisconsin") %>% 
-  select(c("CTYNAME","POPESTIMATE2019")) %>% 
-  mutate(CTYNAME = sub(" County","",CTYNAME)) %>% 
-  rename(County = "CTYNAME") %>% 
-  rename(Population = "POPESTIMATE2019") %>% 
-  mutate(County = sub("Wisconsin","WI",County))
+censusData <- getCensusData(censusURL)
+dhsRegions <- getDHS_Regions()
 
-
-dhsRegions <- read.csv("data/raw/wi_dph_regions.csv", stringsAsFactors = FALSE)
-dhsRegions <- dhsRegions %>% 
-  rename(FIPS = geoid) %>% 
-  mutate(FIPS = as.character(FIPS))
-
+## consolidate data into one data frame
 dhsData <- dhsData %>%  
   inner_join(censusData,by="County") %>% 
   inner_join(dhsRegions,by=c("FIPS", "County"))
