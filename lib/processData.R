@@ -49,4 +49,24 @@ getDHS_Regions <- function() {
         rename(FIPS = geoid) %>% 
         mutate(FIPS = as.character(FIPS))
     return(dhsRegions)
-}
+} ## getDHS_Regions
+
+#############################################
+##  process the data to prep for plotting;
+analyzeData <- function(dhsData,lag) {
+    casesData <-  dhsData %>% 
+        mutate(newCases = Cases - lag(Cases, n=lag,default = NA)) %>% 
+        mutate(newTests = Tests - lag(Tests,n = lag, default = NA)) %>% 
+        mutate(posFraction = newCases/newTests) %>% 
+        mutate(newCases.per1000 = newCases/Population*1000/lag ) %>% 
+        mutate(newTests.per1000 = newTests/Population*1000/lag )
+    
+    casesData <- casesData %>% 
+        mutate(dailyPos = Cases - lag(Cases,n=1)) %>% 
+        mutate(dailyTests = Tests - lag(Tests,n=1)) %>% 
+        mutate(dailyFractionPos = dailyPos/dailyTests) %>% 
+        mutate(Cases.per1000 = dailyPos/Population*1000) %>% 
+        mutate(Tests.per1000 = dailyTests/Population*1000)
+
+    return(casesData)
+} ## analyzeData 

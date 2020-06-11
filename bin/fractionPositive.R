@@ -47,20 +47,7 @@ dhsData <- dhsData %>%
 
 
 ##########  process data ---------------
-casesData <- 
-  dhsData %>% 
-  mutate(newCases = Cases - lag(Cases, n=lag,default = NA)) %>% 
-  mutate(newTests = Tests - lag(Tests,n = lag, default = NA)) %>% 
-  mutate(posFraction = newCases/newTests) %>% 
-  mutate(newCases.per1000 = newCases/Population*1000/lag ) %>% 
-  mutate(newTests.per1000 = newTests/Population*1000/lag )
-
-casesData <- casesData %>% 
-  mutate(dailyPos = Cases - lag(Cases,n=1)) %>% 
-  mutate(dailyTests = Tests - lag(Tests,n=1)) %>% 
-  mutate(dailyFractionPos = dailyPos/dailyTests) %>% 
-  mutate(Cases.per1000 = dailyPos/Population*1000) %>% 
-  mutate(Tests.per1000 = dailyTests/Population*1000)
+casesData <- analyzeData(dhsData,lag)
 
 ###  output csv and initailize plot -----------
 if (!is.null(args$outFile)) {
