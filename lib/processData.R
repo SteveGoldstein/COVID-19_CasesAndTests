@@ -1,4 +1,4 @@
-### read and format data -----------------------------------
+## read and format data -----------------------------------
 
 #############################################
 ##  fetch and reformat daily DHS data;
@@ -70,3 +70,32 @@ analyzeData <- function(dhsData,lag) {
 
     return(casesData)
 } ## analyzeData 
+
+## aggregate one region -----------
+## now a region is defined by DHS region file but
+## later it could be adjacent counties.
+
+## analyzeDataByRegion
+analyzeDataByRegion <- function(dhsData,lag) {
+  ## first aggregate data by region then
+  ## hand off to analyzedData()
+  d <- dhsData %>% 
+    group_by(Region,Date) %>% 
+    summarize_at(vars("Cases","Tests","Population"), sum) %>% 
+    rename(County = Region)
+
+  return(analyzeData(d,lag))
+} ## analyzeDataByRegion
+region <- "Southern"
+aggregateRegionally <- function(casesData,
+                                region = "Southern"
+                                ) {
+  d <- casesData %>% 
+    filter(Region == region)
+  return(d)
+}
+
+i=0
+outFile <- paste("d",i,"csv",sep=".")
+write.csv(d,outFile,quote=F,row.names = F)
+

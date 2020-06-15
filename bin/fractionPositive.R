@@ -48,7 +48,7 @@ dhsData <- dhsData %>%
 
 ##########  process data ---------------
 casesData <- analyzeData(dhsData,lag)
-
+regionData <- analyzeDataByRegion(dhsData,lag)
 ###  output csv and initailize plot -----------
 if (!is.null(args$outFile)) {
     write.csv(casesData,args$outFile, quote = FALSE, row.names = FALSE)
@@ -74,7 +74,7 @@ wiCounties <- casesData %>%
   unlist
 
 wiRegions <- casesData %>% 
-    #arrange(Region,desc(Population)) %>%
+    ungroup %>% 
     select(Region) %>% distinct %>% 
     unlist
 wiRegions
