@@ -73,22 +73,29 @@ wiCounties <- casesData %>%
   select(County) %>% distinct %>% 
   unlist
 
+wiRegions <- casesData %>% 
+    #arrange(Region,desc(Population)) %>%
+    select(Region) %>% distinct %>% 
+    unlist
+wiRegions
 
-plotGrobList <- lapply(wiCounties, function(cty) {plotData(cty)})
+plotGrobList <- lapply(wiCounties, function(cty) {plotData(casesData,cty)})
+numPlots <- length(wiCounties)
 
+#plotGrobList <- lapply(wiRegion, function(region) {plotRegions(casesData,region)})
+#numPlots <- length(wiRegions)
 
-listIndices <- seq(1,length(wiCounties), by = 2)
-
+listIndices <- seq(1,numPlots, by = 2)
 for (i in listIndices[-length(listIndices)]) {
     grid.arrange(grobs = plotGrobList[i:(i+1)], ncol=2, nrow=1)
 }
 
 ## last page might not have ncol*nrow plots  
-grid.arrange(grobs = plotGrobList[last(listIndices):length(wiCounties)], ncol=2, nrow=1)
-    
+grid.arrange(grobs = plotGrobList[last(listIndices):numPlots], ncol=2, nrow=1)
+        
 dev.off()
 
-#q()
+q()
 
 ## to do:
 ##   cache census data?

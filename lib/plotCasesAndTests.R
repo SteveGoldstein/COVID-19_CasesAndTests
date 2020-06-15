@@ -1,5 +1,6 @@
 ###  plot function  ----------------------
-plotData <- function(county = "WI", 
+plotData <- function(casesData,
+                     county = "WI", 
                      textSize = c(3,8,6),  ## plot label, title, axis label
                      objSize = c(0.2,0.4), ## points and line sizes
                      yMax = as.numeric(args$posFractionMax)   ## upper limit for dailyFractionPos
@@ -131,4 +132,16 @@ plotData <- function(county = "WI",
   plots <- plot_grid(casesPlot,testingPlot, testingVolumePlot,ncol=1,align="v") +
     margin
   return(plots)
+}  ## plotData
+
+###############################################
+## plot data for a region
+plotDataByRegion <- function(casesData,region) {
+    d <- casesData %>%
+        filter(Region == region)
+    ## now select 1 county
+    cty <- d[1,"County"]
+    return(plotData(d,cty))
+
 }
+
