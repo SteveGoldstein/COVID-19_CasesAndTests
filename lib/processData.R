@@ -82,20 +82,8 @@ analyzeDataByRegion <- function(dhsData,lag) {
   d <- dhsData %>% 
     group_by(Region,Date) %>% 
     summarize_at(vars("Cases","Tests","Population"), sum) %>% 
-    rename(County = Region)
+    mutate(County = Region)
 
   return(analyzeData(d,lag))
 } ## analyzeDataByRegion
-region <- "Southern"
-aggregateRegionally <- function(casesData,
-                                region = "Southern"
-                                ) {
-  d <- casesData %>% 
-    filter(Region == region)
-  return(d)
-}
-
-i=0
-outFile <- paste("d",i,"csv",sep=".")
-write.csv(d,outFile,quote=F,row.names = F)
 

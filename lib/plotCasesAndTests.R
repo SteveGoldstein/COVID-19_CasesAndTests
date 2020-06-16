@@ -30,6 +30,17 @@ plotData <- function(casesData,
     geom_line(data=d,aes(Date,newCases.per1000),col = "red", size = objSize[2] )
   
   ## annotate
+  
+  if (d$Region[1] == county) {
+    geoAreaName <- d$Region[1]
+  } else {
+    geoAreaName <- paste0(d$Region[1], ":  ",county)
+  }
+  plotTitle <- paste0(geoAreaName,
+                      " (", lastDate, " totals: ", 
+                      cases, " cases; ", tests, " tests)"
+  )
+
   casesPlot <- casesPlot + 
     annotate("text", x= min(d$Date)+1, y = max(d$Cases.per1000,na.rm = TRUE), hjust=0, vjust=1,
              label = "Confirmed Cases", size = textSize[1]) +
@@ -37,9 +48,7 @@ plotData <- function(casesData,
              label = paste0("-- rolling ",args$lag ," day window"),
              col="red", size = textSize[1]) +
     labs(x = NULL, y ="New Cases per 1000") +
-    ggtitle(paste0(d$Region, ":  ",county, 
-                  " (", lastDate, " totals: ", cases, " cases; ", tests, " tests)"
-                  )) +
+    ggtitle(plotTitle) +
     theme(plot.title = element_text(size = textSize[2]),
           axis.text.x = element_blank(),
           axis.title = element_text(size = textSize[3])
@@ -133,15 +142,3 @@ plotData <- function(casesData,
     margin
   return(plots)
 }  ## plotData
-
-###############################################
-## plot data for a region
-plotDataByRegion <- function(casesData,region) {
-    d <- casesData %>%
-        filter(Region == region)
-    ## now select 1 county
-    cty <- d[1,"County"]
-    return(plotData(d,cty))
-
-}
-

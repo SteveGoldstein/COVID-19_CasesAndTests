@@ -14,6 +14,7 @@ defaultArgs <- list (
   lag = 7,              ## smoothing interval (days)
   posFractionMax = 0.5, ## threshold for truncating y axis on testing plot
   inFile = NULL,        ## hook to by-pass download for functional tests
+  by = "County",         ## "County" or "Region"
 
   popGroupingSize = 70000,    ## group counties to get at least N in each group.
   verbose = FALSE
@@ -47,8 +48,24 @@ dhsData <- dhsData %>%
 
 
 ##########  process data ---------------
-casesData <- analyzeData(dhsData,lag)
-regionData <- analyzeDataByRegion(dhsData,lag)
+if (args$by == "County") {
+  casesData <- analyzeData(dhsData,lag)
+  #### Sort counties by region then population in decreasing order  
+  geoAreas <- casesData %>% 
+    arrange(Region,desc(Population)) %>% 
+    select(County) %>% distinct %>% 
+    unlist
+  
+} else {
+  casesData <- analyzeDataByRegion(dhsData,lag)
+  #### Sort regions by population in decreasing order
+  geoAreas <- casesData %>% 
+    ungroup %>% 
+    arrange(desc(Population)) %>% 
+    select(Region) %>% distinct %>% 
+    unlist
+}
+
 ###  output csv and initailize plot -----------
 if (!is.null(args$outFile)) {
     write.csv(casesData,args$outFile, quote = FALSE, row.names = FALSE)
@@ -67,22 +84,11 @@ if (!is.null(args$plotFile)) {
 ## task 1:   plot the regions in separate pdfs;
 ## our just add label to county with region; sort by region then pop;
 
-#### Sort counties by region then population in decreasing order
-wiCounties <- casesData %>% 
-    arrange(Region,desc(Population)) %>% 
-  select(County) %>% distinct %>% 
-  unlist
 
-wiRegions <- casesData %>% 
-    ungroup %>% 
-    select(Region) %>% distinct %>% 
-    unlist
-wiRegions
+plotGrobList <- lapply(geoAreas, function(area) {plotData(casesData,area)})
+numPlots <- length(geoAreas)
 
-plotGrobList <- lapply(wiCounties, function(cty) {plotData(casesData,cty)})
-numPlots <- length(wiCounties)
-
-#plotGrobList <- lapply(wiRegion, function(region) {plotRegions(casesData,region)})
+#plotGrobList <- lapply(wiRegions, function(region) {plotData(regionData,region)})
 #numPlots <- length(wiRegions)
 
 listIndices <- seq(1,numPlots, by = 2)
