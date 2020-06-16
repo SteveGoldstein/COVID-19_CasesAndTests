@@ -34,7 +34,7 @@ plotData <- function(casesData,
   if (d$Region[1] == county) {
     geoAreaName <- d$Region[1]
   } else {
-    geoAreaName <- paste0(d$Region[1], ":  ",county)
+    geoAreaName <- paste(d$Region[1], county, sep = '\n')
   }
   plotTitle <- paste0(geoAreaName,
                       " (", lastDate, " totals: ", 
@@ -106,7 +106,7 @@ plotData <- function(casesData,
     geom_point(data=d, aes(x=Date, y=posFraction), col = "red", size = objSize[1]) +
     geom_line(data=d,aes(Date,posFraction),col = "red", size = objSize[2] )
   testingPlot <- testingPlot + 
-    annotate("text", x= min(d$Date)+1, y = yMax, hjust=0, vjust=0,
+    annotate("text", x= min(d$Date)+1, y = yMax, hjust=0, vjust=1,
              label = "Positive Tests", size = textSize[1]) +
     labs(x = NULL, y ="Fraction positive") +
     theme(axis.title = element_text(size = textSize[3]))  + 

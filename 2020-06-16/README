@@ -1,0 +1,13 @@
+###  
+     
+### cmd:
+Rscript --vanilla bin/fractionPositive.R -outFile 2020-06-16/testsAndCases.7DaySmoothing.byCounty.csv -lag 7 -plotFile 2020-06-16/testsAndCases.7DaySmoothing.byCounty.pdf -by County 1> 2020-06-16/testsAndCases.7DaySmoothing.byCounty.out 2> 2020-06-16/testsAndCases.7DaySmoothing.byCounty.err &
+
+Rscript --vanilla bin/fractionPositive.R -outFile 2020-06-16/testsAndCases.14DaySmoothing.byCounty.csv -lag 14 -plotFile 2020-06-16/testsAndCases.14DaySmoothing.byCounty.pdf -by County 1> 2020-06-16/testsAndCases.14DaySmoothing.byCounty.out 2> 2020-06-16/testsAndCases.14DaySmoothing.byCounty.err &
+
+Rscript --vanilla bin/fractionPositive.R -outFile 2020-06-16/testsAndCases.7DaySmoothing.byRegion.csv -lag 7 -plotFile 2020-06-16/testsAndCases.7DaySmoothing.byRegion.pdf -by Region 1> 2020-06-16/testsAndCases.7DaySmoothing.byRegion.out 2> 2020-06-16/testsAndCases.7DaySmoothing.byRegion.err &
+
+Rscript --vanilla bin/fractionPositive.R -outFile 2020-06-16/testsAndCases.14DaySmoothing.byRegion.csv -lag 14 -plotFile 2020-06-16/testsAndCases.14DaySmoothing.byRegion.pdf -by Region 1> 2020-06-16/testsAndCases.14DaySmoothing.byRegion.out 2> 2020-06-16/testsAndCases.14DaySmoothing.byRegion.err &
+
+
+
