@@ -78,13 +78,13 @@ analyzeData <- function(dhsData,lag) {
 ## later it could be adjacent counties.
 
 ## analyzeDataByRegion
-analyzeDataByRegion <- function(dhsData,lag) {
+analyzeDataByRegion <- function(dhsData,lag,geoArea=args$by) {
   ## first aggregate data by region then
   ## hand off to analyzedData()
   d <- dhsData %>% 
-    group_by(Region,Date) %>% 
+    group_by(!!sym(geoArea),Date) %>% 
     summarize_at(vars("Cases","Tests","Population"), sum) %>% 
-    mutate(County = Region)
+    mutate(County = !!sym(geoArea))
 
   return(analyzeData(d,lag))
 } ## analyzeDataByRegion

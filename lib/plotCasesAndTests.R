@@ -1,6 +1,7 @@
 ###  plot function  ----------------------
 plotData <- function(casesData,
-                     county = "WI", 
+                     county = "WI",
+                     geoArea = "County",
                      textSize = c(3,8,6),  ## plot label, title, axis label
                      objSize = c(0.2,0.4), ## points and line sizes
                      yMax = as.numeric(args$posFractionMax)   ## upper limit for dailyFractionPos
@@ -31,10 +32,11 @@ plotData <- function(casesData,
   
   ## annotate
   
-  if (d$Region[1] == county) {
-    geoAreaName <- d$Region[1]
-  } else {
+  if (geoArea == "County") {
     geoAreaName <- paste(d$Region[1], county, sep = '\n')
+    
+  } else {
+    geoAreaName <- d %>% select(!!sym(geoArea)) %>% head(1) %>% unlist
   }
   plotTitle <- paste0(geoAreaName,
                       " (", lastDate, " totals: ", 

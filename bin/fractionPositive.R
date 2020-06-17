@@ -53,16 +53,17 @@ if (args$by == "County") {
   #### Sort counties by region then population in decreasing order  
   geoAreas <- casesData %>% 
     arrange(Region,desc(Population)) %>% 
-    select(County) %>% distinct %>% 
+    #select(vars(County)) %>% distinct %>% 
+    select(!!sym(args$by)) %>% distinct %>% 
     unlist
   
 } else {
-  casesData <- analyzeDataByRegion(dhsData,lag)
+  casesData <- analyzeDataByRegion(dhsData,lag,geoArea=args$by)
   #### Sort regions by population in decreasing order
   geoAreas <- casesData %>% 
     ungroup %>% 
     arrange(desc(Population)) %>% 
-    select(Region) %>% distinct %>% 
+    select(!!sym(args$by)) %>% distinct %>% 
     unlist
 }
 
