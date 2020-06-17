@@ -1,4 +1,5 @@
-###  
+###  git commit
+## [DHSCriteria 79296a5] Tweaked annotation
      
 ### cmd:
 Rscript --vanilla bin/fractionPositive.R -outFile 2020-06-16/testsAndCases.7DaySmoothing.byCounty.csv -lag 7 -plotFile 2020-06-16/testsAndCases.7DaySmoothing.byCounty.pdf -by County 1> 2020-06-16/testsAndCases.7DaySmoothing.byCounty.out 2> 2020-06-16/testsAndCases.7DaySmoothing.byCounty.err &

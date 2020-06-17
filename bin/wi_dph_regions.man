@@ -1,0 +1,1 @@
+cat data/raw/wi_dph_regions.csv |perl -F, -ple 'if ($.==1) {s/fips/geoid/;s/county/County/;  s/dph_region/Region/;} s/\cM//; s/\s*$//; s/(\d),(\d)/$1$2/g; s/\"//g; ' > data/processed/wi_dph_regions.csv
