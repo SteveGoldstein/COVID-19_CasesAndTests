@@ -32,16 +32,14 @@ plotData <- function(casesData,
   
   ## annotate
   
+  geoAreaName <- d %>% select(!!sym(geoArea)) %>% head(1) %>% unlist
   if (geoArea == "County") {
-    geoAreaName <- paste(d$Region[1], county, sep = '\n')
-    
-  } else {
-    geoAreaName <- d %>% select(!!sym(geoArea)) %>% head(1) %>% unlist
+    geoAreaName <- paste0(geoAreaName, " (", d$Region[1], ")")
   }
-  plotTitle <- paste0(geoAreaName,
-                      " (", lastDate, " totals: ", 
-                      cases, " cases; ", tests, " tests)"
-  )
+  totals <- paste0( "(", lastDate, " totals: ",
+                    cases, " cases; ", tests, " tests)"
+                  )
+  plotTitle <- paste(geoAreaName, totals,sep = "\n")
 
   casesPlot <- casesPlot + 
     annotate("text", x= min(d$Date)+1, y = max(d$Cases.per1000,na.rm = TRUE), hjust=0, vjust=1,

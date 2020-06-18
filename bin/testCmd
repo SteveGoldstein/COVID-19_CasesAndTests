@@ -1,0 +1,9 @@
+#!/bin/bash
+
+i=$1
+
+Rscript --vanilla bin/fractionPositive.R -outFile 2020-06-16/testsAndCases.7DaySmoothing.byRegion.$i.csv -lag 7 -plotFile 2020-06-16/testsAndCases.7DaySmoothing.byRegion.$i.pdf -by Region -inFile data/raw/DHS_data.2020-06-16.csv 1> 2020-06-16/testsAndCases.7DaySmoothing.byRegion.$i.out 2> 2020-06-16/testsAndCases.7DaySmoothing.byRegion.$i.err &
+
+Rscript --vanilla bin/fractionPositive.R -outFile 2020-06-16/testsAndCases.7DaySmoothing.byCounty.$i.csv -lag 7 -plotFile 2020-06-16/testsAndCases.7DaySmoothing.byCounty.$i.pdf -inFile data/raw/DHS_data.2020-06-16.csv -by County 1> 2020-06-16/testsAndCases.7DaySmoothing.byCounty.$i.out 2> 2020-06-16/testsAndCases.7DaySmoothing.byCounty.$i.err &
+
+Rscript --vanilla bin/fractionPositive.R -outFile 2020-06-16/testsAndCases.7DaySmoothing.by_herc_region.$i.csv -lag 7 -plotFile 2020-06-16/testsAndCases.7DaySmoothing.by_herc_region.$i.pdf -by herc_region -inFile data/raw/DHS_data.2020-06-16.csv 1> 2020-06-16/testsAndCases.7DaySmoothing.by_herc_region.$i.out 2> 2020-06-16/testsAndCases.7DaySmoothing.by_herc_region.$i.err &

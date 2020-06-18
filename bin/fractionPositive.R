@@ -86,7 +86,7 @@ if (!is.null(args$plotFile)) {
 ## our just add label to county with region; sort by region then pop;
 
 
-plotGrobList <- lapply(geoAreas, function(area) {plotData(casesData,area)})
+plotGrobList <- lapply(geoAreas, function(area) {plotData(casesData,area,args$by)})
 numPlots <- length(geoAreas)
 
 #plotGrobList <- lapply(wiRegions, function(region) {plotData(regionData,region)})
