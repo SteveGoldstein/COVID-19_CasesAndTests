@@ -78,13 +78,16 @@ analyzeData <- function(dhsData,lag) {
 ## later it could be adjacent counties.
 
 ## analyzeDataByRegion
-analyzeDataByRegion <- function(dhsData,lag,geoArea=args$by) {
-  ## first aggregate data by region then
-  ## hand off to analyzedData()
+analyzeDataByRegion <- function(dhsData,lag,geoGrouping = "County") {
+  ## first aggregate data by geoGrouping (DHS Region or herc_region)
+  ## then hand off to analyzedData()
+    if (geoGrouping == "County") {
+        return(analyzeData(dshData,lag))
+    }
   d <- dhsData %>% 
-    group_by(!!sym(geoArea),Date) %>% 
+    group_by(!!sym(geoGrouping),Date) %>% 
     summarize_at(vars("Cases","Tests","Population"), sum) %>% 
-    mutate(County = !!sym(geoArea))
+    mutate(County = !!sym(geoGrouping))
 
   return(analyzeData(d,lag))
 } ## analyzeDataByRegion
