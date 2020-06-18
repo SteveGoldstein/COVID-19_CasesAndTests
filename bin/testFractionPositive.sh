@@ -1,15 +1,23 @@
-#!/bin/sh
+#!/bin/bash
 
-### run a single instance; 
-i=$1
+## update plots with latest version of DHS data;
+##  usage:  bin/dailyUpdate.sh <DATE>
 
-Rscript --vanilla bin/fractionPositive.R -outFile test/byRegion.$i.csv -plotFile test/byRegion.$i.pdf 1> test/o.$i 2> test/e.$i
+## Warning: no warning if files are being overwritten;
 
-## Validation:
-## manually diff; 
-##     for f in o e; do diff f.$i* f.$j*; done
-##     diff test/byRegion.$i.csv test/byRegion.$j.csv
-##                    ## where j=i-1;
-## check size of pdf and visually inspect
-##     ls -l test/byRegion.{$i,$j}.pdf
-##     open test/byRegion.$i.pdf
+date=$1
+i=$2
+
+mkdir $date
+
+Rscript --vanilla bin/fractionPositive.R -outFile $date/testsAndCases.7DaySmoothing.byRegion.$i.csv -lag 7 -plotFile $date/testsAndCases.7DaySmoothing.byRegion.$i.pdf -by Region \
+	-inFile data/raw/DHS_data.2020-06-16.csv \
+	1> $date/testsAndCases.7DaySmoothing.byRegion.$i.out 2> $date/testsAndCases.7DaySmoothing.byRegion.$i.err &
+
+Rscript --vanilla bin/fractionPositive.R -outFile $date/testsAndCases.7DaySmoothing.byCounty.$i.csv -lag 7 -plotFile $date/testsAndCases.7DaySmoothing.byCounty.$i.pdf \
+	-inFile data/raw/DHS_data.2020-06-16.csv \
+	-by County 1> $date/testsAndCases.7DaySmoothing.byCounty.$i.out 2> $date/testsAndCases.7DaySmoothing.byCounty.$i.err &
+
+Rscript --vanilla bin/fractionPositive.R -outFile $date/testsAndCases.7DaySmoothing.by_herc_region.$i.csv -lag 7 -plotFile $date/testsAndCases.7DaySmoothing.by_herc_region.$i.pdf -by herc_region \
+	-inFile data/raw/DHS_data.2020-06-16.csv \
+	1> $date/testsAndCases.7DaySmoothing.by_herc_region.$i.out 2> $date/testsAndCases.7DaySmoothing.by_herc_region.$i.err &

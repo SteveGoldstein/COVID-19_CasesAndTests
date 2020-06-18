@@ -1,0 +1,11 @@
+## cmd:
+
+bin/dailyUpdate 2020-06-18
+
+## git commit:
+
+
+######### generate 3 sets of plots with 7 day lag;
+1. One for each county;
+2. Aggregate by wph regions;
+3. Aggregate by wph herc_regions
