@@ -15,7 +15,11 @@ plotData <- function(casesData,
   firstDate <- min(d$Date)
   lastDate <- max(d$Date)
   cases <- (d %>%  filter(Date == lastDate & County == county))$Cases
+  cases2wksAgo <- (d %>%  filter(Date == lastDate-14 & County == county))$Cases
   tests <- (d %>%  filter(Date == lastDate & County == county))$Tests
+  tests2wksAgo <- (d %>%  filter(Date == lastDate-14 & County == county))$Tests
+  recentCases <- cases - cases2wksAgo
+  recentTests <- tests - tests2wksAgo
   
   ### Burden thresholds for DHS stages;
   burden14DayPer100k <- c(10,50,100)
@@ -36,10 +40,14 @@ plotData <- function(casesData,
   if (geoArea == "County") {
     geoAreaName <- paste0(geoAreaName, " (", d$Region[1], ")")
   }
-  totals <- paste0( "(", lastDate, " totals: ",
-                    cases, " cases; ", tests, " tests)"
+  totals <- paste0( lastDate, " totals: ",
+                    cases, " cases; ", tests, " tests"
                   )
-  plotTitle <- paste(geoAreaName, totals,sep = "\n")
+  recentTotals <- paste0( "Previous two weeks: ",
+                    recentCases, " cases; ", recentTests, " tests"
+                    )
+
+  plotTitle <- paste(geoAreaName, totals,recentTotals,sep = "\n")
 
   casesPlot <- casesPlot + 
     annotate("text", x= min(d$Date)+1, y = max(d$Cases.per1000,na.rm = TRUE), hjust=0, vjust=1,

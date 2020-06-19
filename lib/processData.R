@@ -14,14 +14,14 @@ getDHS_Data <- function(dataSource) {
 
     ## enforce monotonicity in positive and negative test results;
     dhsData <-  dhsData %>% 
-        group_by(County) %>% 
+      group_by(County) %>% 
       arrange(desc(Date)) %>% 
-        mutate(NEGATIVE = cummin(NEGATIVE)) %>% 
-        mutate(POSITIVE = cummin(POSITIVE)) %>% 
-        mutate(Tests = NEGATIVE + POSITIVE) %>% 
-        rename(Cases = "POSITIVE") %>% 
-        select(-c("NEGATIVE")) %>% 
-        arrange(Date)
+      mutate(NEGATIVE = cummin(NEGATIVE)) %>% 
+      mutate(POSITIVE = cummin(POSITIVE)) %>% 
+      mutate(Tests = NEGATIVE + POSITIVE) %>% 
+      rename(Cases = "POSITIVE") %>% 
+      select(-c("NEGATIVE")) %>% 
+      arrange(Date)
 
     return(dhsData)
 } ## getDHS_Data
