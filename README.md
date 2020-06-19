@@ -1,4 +1,4 @@
-# ideasAndExamples
+# Cases and Tests
 
 Comparing case counts, fraction positive test results, and testing
 volume time series for each county or counties aggregated by region.
