@@ -39,7 +39,7 @@ dhsData <- getDHS_Data(dataSource)
 
 ## get population data
 censusData <- getCensusData(censusURL)
-dhsRegions <- getDHS_Regions()
+dhsRegions <- getRegions()
 
 ## consolidate data into one data frame
 dhsData <- dhsData %>%  

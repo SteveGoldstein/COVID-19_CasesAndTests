@@ -43,15 +43,12 @@ getCensusData <- function(censusURL) {
 }
 #############################################
 ## partition the counties into 5 regions
-getDHS_Regions <- function() {
-  dhsRegions <- read.csv("data/processed/wi_dph_regions.csv", 
-                         stringsAsFactors = FALSE
-                         )
-  dhsRegions <- dhsRegions %>% 
+getRegions <- function(regionFile = "data/processed/wi_dph_regions.csv") {
+  regions <- read.csv(regionFile, stringsAsFactors = FALSE) %>% 
     rename(FIPS = geoid) %>% 
     mutate(FIPS = as.character(FIPS))
-  return(dhsRegions)
-} ## getDHS_Regions
+  return(regions)
+} ## getRegions
 
 #############################################
 ##  process the data to prep for plotting;
