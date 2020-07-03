@@ -89,3 +89,14 @@ analyzeDataByRegion <- function(dhsData,lag,geoGrouping = "County") {
   return(analyzeData(d,lag))
 } ## analyzeDataByRegion
 
+#### get adjacency table
+getAdjacentCounties <- function(adjFile = "data/raw/county_adjacency.csv") {
+  adjCounties <- read.csv(adjFile)  %>% 
+    dplyr::filter(state == "WI" & state.adjacent == "WI") %>% 
+    dplyr::transmute(
+      Region = sub(" County", "Area", x = county),
+      County = sub(" County", "", x = county.adjacent),
+      FIPS = as.character(fips.adjacent)
+      )
+  
+}  ## getAdjacentCounties

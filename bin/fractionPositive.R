@@ -39,12 +39,14 @@ dhsData <- getDHS_Data(dataSource)
 
 ## get population data
 censusData <- getCensusData(censusURL)
-dhsRegions <- getRegions()
+dhsRegions <- getRegions("tmp/wi_dph_regions.csv")
+adjCounties <- getAdjacentCounties()
 
 ## consolidate data into one data frame
 dhsData <- dhsData %>%  
   inner_join(censusData,by="County") %>% 
-  inner_join(dhsRegions,by=c("FIPS", "County"))
+  #inner_join(dhsRegions,by=c("FIPS", "County"))
+  inner_join(adjCounties,by=c("FIPS", "County"))
 
 
 ##########  process data ---------------
