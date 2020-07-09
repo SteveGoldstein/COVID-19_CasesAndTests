@@ -1,0 +1,2 @@
+## Extract WI county adjacencies, filter to restrict to WI counties
+cat data/raw/county_adjacency.csv | perl -F, -nale 'print if ($F[1] eq "WI" and $F[-2] eq "WI" or $.==1)' > data/processed/county_adjacency.csv 
