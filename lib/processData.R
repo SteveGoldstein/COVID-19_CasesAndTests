@@ -3,11 +3,14 @@
 #############################################
 ##  fetch and reformat daily DHS data;
 getDHS_Data <- function(dataSource) {
+    
     dhsData <-
         read.csv(dataSource,stringsAsFactors = FALSE) %>% 
         select(2:7) %>% 
-        filter(GEO == "County" | GEO == "State") %>% 
-        mutate(LoadDttm = ymd(as.Date(.$LoadDttm))) %>% 
+        filter(GEO == "County" | GEO == "State") %>%
+        rename_with(~sub("LoadDttm", "DATE", .x)) %>%
+        #rename(DATE = LoadDttm)    %>%
+        mutate(DATE = ymd(as.Date(.$DATE))) %>% 
         rename(FIPS = "GEOID") %>% 
         rename(Date = "LoadDttm") %>% 
         rename(County = "NAME")
