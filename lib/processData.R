@@ -5,14 +5,28 @@
 getDHS_Data <- function(dataSource) {
     
     dhsData <-
-        read.csv(dataSource,stringsAsFactors = FALSE) %>% 
-        select(2:7) %>% 
+        read.csv(dataSource,stringsAsFactors = FALSE)
+    if ("LoadDttm" %in% names(dhsData)) {
+        dhsData <- dhsData %>%
+            select(c(2:7)) %>%
+            rename(Date = "LoadDttm")
+    }
+    else {
+        ##  which col in DATE
+        dhsData <- dhsData %>%
+            rename(Date = "DATE") %>%
+            select(Date,everything()) %>%
+            select(c(1,3:7))
+    }
+        
+    dhsData <-
+        dhsData %>%
         filter(GEO == "County" | GEO == "State") %>%
-        rename_with(~sub("LoadDttm", "DATE", .x)) %>%
+        #rename_with(~sub("LoadDttm", "DATE", .x)) %>%
         #rename(DATE = LoadDttm)    %>%
-        mutate(DATE = ymd(as.Date(.$DATE))) %>% 
+        mutate(Date = ymd(as.Date(.$Date))) %>% 
         rename(FIPS = "GEOID") %>% 
-        rename(Date = "LoadDttm") %>% 
+        #rename(Date = "DATE") %>% 
         rename(County = "NAME")
 
     ## enforce monotonicity in positive and negative test results;
